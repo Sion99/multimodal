@@ -9,24 +9,24 @@ Before you begin, ensure you have met the following requirements:
 - OS: Windows 10 or higher, macOS 14, Linux
 ### Installing
 1. Clone the repository:
-```
+```sh
 git clone https://github.com/sion99/multimodal.git
 cd multimodal
 ```
 2. Create and activate a virtual environment:
-```
+```sh
 python -m venv .venv
 source .venv/bin/activate   # On Windows use: .venv\Scripts\activate
 ```
 3. Install the required libraries:
-```
+```sh
 pip install -r requirements.txt
 ```
 ### Executing Program
 To run the program, follow these steps:
 
 1. Start the Python script
-```
+```sh
 python main.py
 ```
 2. The webcam will activate, and the program will begin listening for voice commands and tracking hand gestures.
