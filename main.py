@@ -20,6 +20,10 @@ def main():
             print(e)
             break  # 웹캠 읽기 실패시 루프 종료
 
+        # 프레임 계산
+        fps = webcam.calculate_fps(cap)
+        cv2.putText(img, f"FPS: {int(fps)}", (10, 30), cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0), 2)
+
         # 음성 명령 가져오기
         voice_label = voice_command.get_voice_cmd()
 

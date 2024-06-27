@@ -18,3 +18,6 @@ def read_frame(cap):
     frame = cv2.flip(frame, 1)  # 좌우 반전
     return frame
 
+
+def calculate_fps(cap):
+    return cap.get(cv2.CAP_PROP_FPS)
