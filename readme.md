@@ -25,7 +25,7 @@ pip install -r requirements.txt
 ### Executing Program
 To run the program, follow these steps:
 
-1, Start the Python script
+1. Start the Python script
 ```
 python main.py
 ```
