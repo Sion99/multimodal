@@ -3,7 +3,7 @@ import cv2
 import time
 
 
-def setup_webcam(cam_id=0, width=320, height=240):
+def setup_webcam(cam_id=0, width=1280, height=720):
     cap = cv2.VideoCapture(cam_id)
     cap.set(3, width)
     cap.set(4, height)

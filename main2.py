@@ -15,6 +15,7 @@ last_click_time = 0
 CLICK_INTERVAL = 0.5  # 클릭 간 최소 간격 (초)
 
 
+
 def handle_mouse_events(action, lmList, cap):
     global pointer_stopped, zoom_mode, initial_distance
 

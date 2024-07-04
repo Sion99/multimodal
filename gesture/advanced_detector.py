@@ -4,7 +4,7 @@ import numpy as np
 import pyautogui
 import math
 
-detector = HandDetector(detectionCon=0.8)
+detector = HandDetector(detectionCon=0.9)
 
 
 def detect_hand_and_get_fingers(image):
