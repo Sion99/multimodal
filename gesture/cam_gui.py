@@ -1,3 +1,4 @@
+import sys
 import cv2
 import mediapipe as mp
 import numpy as np
@@ -5,8 +6,10 @@ import pyautogui
 import time
 from collections import deque, Counter
 import threading
-import webcam
 from screeninfo import get_monitors
+from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget, QHBoxLayout
+from PyQt5.QtGui import QImage, QPixmap
+from PyQt5.QtCore import QTimer, Qt
 
 # PyAutoGUI fail-safe 비활성화
 pyautogui.FAILSAFE = False
@@ -54,7 +57,6 @@ def get_finger_status(hand_landmarks):
     """
     global scroll_mode, thumb_index_distance
     fingers = []
-
 
     # 엄지
     if hand_landmarks.landmark[5].x < hand_landmarks.landmark[17].x:  # 왼손
@@ -104,8 +106,6 @@ def recognize_gesture(fingers_status):
         return 'click'
     elif fingers_status == [1, 1, 1, 0, 0]:
         return 'drag'
-    # elif fingers_status == [0, 1, 1, 1, 1]:
-    #     return 'scroll'
     elif fingers_status == [1, 1, 1, 1, 1]:
         return 'move'
 
@@ -118,7 +118,7 @@ def perform_mouse_action(gesture, lmList, handedness):
     x, y = lmList[8].x, lmList[8].y  # 현재 손가락 위치
     mouse_x, mouse_y = pyautogui.position()
 
-    wrist = (lmList[0].x, lmList[0].y) # 손목 위치
+    wrist = (lmList[0].x, lmList[0].y)  # 손목 위치
 
     if prev_finger_pos is not None:
         # 상대 이동 거리 계산
@@ -165,75 +165,78 @@ def perform_click_action(gesture):
     last_gesture = gesture
 
 
-def main():
-    global zoom_mode, initial_distance, last_click_time, prev_finger_pos, MOUSE_SENSITIVITY, SCROLL_SENSITIVITY
+class VideoCaptureWidget(QWidget):
+    def __init__(self, parent=None):
+        super(VideoCaptureWidget, self).__init__(parent)
 
-    cap = webcam.setup_webcam()
-    previous_time = time.time()
+        self.video_size = (640, 480)
 
-    print("Webcam is running... Press 'ESC' to exit.")
-    while True:
-        try:
-            img = webcam.read_frame(cap)  # 프레임 읽기
-        except Exception as e:
-            print(e)
-            break
+        # OpenCV Video Capture
+        self.cap = cv2.VideoCapture(0)
 
-        fps, delay, previous_time = webcam.calculate_fps_and_delay(previous_time)
+        # PyQt5 Timer
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_frame)
+        self.timer.start(30)  # Update frame every 30ms
 
-        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        result = hands.process(img_rgb)
-        if result.multi_hand_landmarks:
-            for i, hand_landmarks in enumerate(result.multi_hand_landmarks):
-                fingers_status = get_finger_status(hand_landmarks)
-                gesture = recognize_gesture(fingers_status)
-                gesture_buffer.append(gesture)
+        # Set up the layout
+        self.image_label = QLabel(self)
+        self.image_label.resize(*self.video_size)
 
-                # 버퍼의 최빈값으로 제스처 결정
-                most_common_gesture = Counter(gesture_buffer).most_common(1)[0][0]
+        # Gesture label for displaying gesture information
+        self.gesture_label = QLabel(self)
+        self.gesture_label.setAlignment(Qt.AlignCenter)
 
-                handedness = result.multi_handedness[i].classification[0].label
+        layout = QVBoxLayout()
+        layout.addWidget(self.image_label)
+        layout.addWidget(self.gesture_label)
+        self.setLayout(layout)
 
-                if most_common_gesture in ['move', 'drag', 'scroll']:
-                    thread = threading.Thread(target=perform_mouse_action,
-                                              args=(most_common_gesture, hand_landmarks.landmark, handedness))
-                    thread.start()
-                else:
-                    perform_click_action(most_common_gesture)
+    def update_frame(self):
+        ret, frame = self.cap.read()
+        if ret:
+            img_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            result = hands.process(img_rgb)
+            if result.multi_hand_landmarks:
+                for i, hand_landmarks in enumerate(result.multi_hand_landmarks):
+                    fingers_status = get_finger_status(hand_landmarks)
+                    gesture = recognize_gesture(fingers_status)
+                    gesture_buffer.append(gesture)
 
-                # 손 랜드마크와 연결선 그리기
-                # mp_drawing.draw_landmarks(img, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+                    # 버퍼의 최빈값으로 제스처 결정
+                    most_common_gesture = Counter(gesture_buffer).most_common(1)[0][0]
 
-        cv2.putText(img,
-                    f"F: {int(fps)} D: {delay}ms ACT: {last_gesture} MSENS: {round(MOUSE_SENSITIVITY, 3)} SCR: {round(SCROLL_SENSITIVITY, 3)} distance: {round(thumb_index_distance, 3)} SCR MODE: {scroll_mode}",
-                    (10, 30),
-                    cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0), 2)
+                    handedness = result.multi_handedness[i].classification[0].label
 
-        cv2.imshow('Hand Gesture', img)
+                    if most_common_gesture in ['move', 'drag', 'scroll']:
+                        thread = threading.Thread(target=perform_mouse_action,
+                                                  args=(most_common_gesture, hand_landmarks.landmark, handedness))
+                        thread.start()
+                    else:
+                        perform_click_action(most_common_gesture)
 
-        input = cv2.waitKey(1)
+                    mp_drawing.draw_landmarks(img_rgb, hand_landmarks, mp_hands.HAND_CONNECTIONS)
 
-        if input == 27:
-            break
-        elif input == ord('a'):
-            if MOUSE_SENSITIVITY > 0.1:
-                MOUSE_SENSITIVITY -= 0.1
-        elif input == ord('s'):
-            if MOUSE_SENSITIVITY < 2.9:
-                MOUSE_SENSITIVITY += 0.1
-        elif input == ord('d'):
-            if SCROLL_SENSITIVITY > 0.1:
-                SCROLL_SENSITIVITY -= 0.05
-        elif input == ord('f'):
-            if SCROLL_SENSITIVITY < 0.9:
-                SCROLL_SENSITIVITY += 0.05
-        elif input == ord('g'):
-            SCROLL_SENSITIVITY = -SCROLL_SENSITIVITY
+            image = QImage(img_rgb, img_rgb.shape[1], img_rgb.shape[0], QImage.Format_RGB888)
+            self.image_label.setPixmap(QPixmap.fromImage(image))
+            self.gesture_label.setText(f"Gesture: {last_gesture}")
 
-    cap.release()
-    cv2.destroyAllWindows()
+    def closeEvent(self, event):
+        self.cap.release()
+        event.accept()
+
+
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super(MainWindow, self).__init__()
+        self.setWindowTitle("Hand Gesture Recognition")
+        self.setGeometry(100, 100, 800, 600)
+        self.video_widget = VideoCaptureWidget(self)
+        self.setCentralWidget(self.video_widget)
 
 
 if __name__ == "__main__":
-    main()
-
+    app = QApplication(sys.argv)
+    main_window = MainWindow()
+    main_window.show()
+    sys.exit(app.exec_())
