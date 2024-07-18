@@ -18,8 +18,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", default="medium", help="Model to use",
                         choices=["tiny", "base", "small", "medium", "large"])
-    parser.add_argument("--non_english", action='store_true',
-                        help="Don't use the english model.")
+    parser.add_argument("--language", default="en", help="Language of the audio")
     parser.add_argument("--energy_threshold", default=1000,
                         help="Energy level for mic to detect.", type=int)
     parser.add_argument("--record_timeout", default=2,
@@ -55,8 +54,6 @@ def main():
         source = sr.Microphone(sample_rate=16000)
 
     model = args.model
-    if args.model != "large" and not args.non_english:
-        model = model + ".en"
     audio_model = whisper.load_model(model)
 
     record_timeout = args.record_timeout
@@ -75,7 +72,15 @@ def main():
 
     print("Model loaded.\n")
 
-
+    # 명령어 리스트
+    commands = {
+        "click": "Click",
+        "double click": "Double Click",
+        "stop": "Stop",
+        "클릭": "Click",
+        "더블클릭": "Double Click",
+        "스탑": "Stop"
+    }
 
     while True:
         try:
@@ -91,8 +96,13 @@ def main():
 
                 audio_np = np.frombuffer(audio_data, dtype=np.int16).astype(np.float32) / 32768.0
 
-                result = audio_model.transcribe(audio_np, fp16=torch.cuda.is_available())
-                text = result['text'].strip()
+                result = audio_model.transcribe(audio_np, fp16=torch.cuda.is_available(), language=args.language)
+                text = result['text'].strip().lower()
+
+                if text in commands:
+                    print(f"Detected command: {commands[text]}")
+                else:
+                    print(f"Transcription: {text}")
 
                 if phrase_complete:
                     transcription.append(text)

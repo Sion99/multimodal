@@ -98,9 +98,9 @@ class VideoCaptureWidget(QWidget):
 
 
 class MainWidget(QWidget):
-
-    def __init__(self, parent=None):
+    def __init__(self, main_window, parent=None):
         super(MainWidget, self).__init__(parent)
+        self.main_window = main_window
         self.initUI()
 
     def initUI(self):
@@ -111,9 +111,9 @@ class MainWidget(QWidget):
 
     def toggle_gesture_mode(self, state):
         if state == Qt.Checked:
-            self.parent().statusBar().showMessage('Gesture Mode On')
+            self.main_window.statusBar().showMessage('Gesture Mode On')
         else:
-            self.parent().statusBar().showMessage('Gesture Mode Off')
+            self.main_window.statusBar().showMessage('Gesture Mode Off')
 
 
 class MainWindow(QMainWindow):
@@ -124,7 +124,7 @@ class MainWindow(QMainWindow):
     def initUI(self):
         self.setWindowTitle('Hiperwall Multimodal Interface')
         self.setGeometry(100, 100, 800, 600)  # 초기 창 크기를 조정
-        self.setMinimumSize(320, 240)  # 최소 크기 설정
+        # self.setMinimumSize(320, 240)  # 최소 크기 설정
 
         self.stacked_widget = QStackedWidget(self)
         self.setCentralWidget(self.stacked_widget)
@@ -136,7 +136,7 @@ class MainWindow(QMainWindow):
         self.main_widget = QWidget(self)
 
         # 새로운 패널을 위한 MainWidget
-        self.additional_panel = MainWidget(self)
+        self.additional_panel = MainWidget(self, self.main_widget)
 
         self.main_layout = QHBoxLayout(self.main_widget)
         self.main_layout.addWidget(self.video_widget)

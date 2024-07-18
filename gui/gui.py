@@ -1,43 +1,28 @@
-## Ex 8-1-2. 점 그리기2 (drawPoint).
-
 import sys
-from PyQt5.QtWidgets import QWidget, QApplication
-from PyQt5.QtGui import QPainter, QPen, QColor
-import numpy as np
+from PyQt5.QtWidgets import *
+from PyQt5 import uic
+
+#UI파일 연결
+#단, UI파일은 Python 코드 파일과 같은 디렉토리에 위치해야한다.
+form_class = uic.loadUiType("multimodal.ui")[0]
 
 
-class MyApp(QWidget):
-
+#화면을 띄우는데 사용되는 Class 선언
+class WindowClass(QMainWindow, form_class):
     def __init__(self):
         super().__init__()
-        self.initUI()
-
-    def initUI(self):
-        self.setGeometry(300, 300, 400, 300)
-        self.setWindowTitle('drawPoint')
-        self.show()
-
-    def paintEvent(self, e):
-        qp = QPainter()
-        qp.begin(self)
-        self.draw_point(qp)
-        qp.end()
-
-    def draw_point(self, qp):
-        pen = QPen()
-        colors = ['#D83C5F', '#3CD88F', '#AA5CE3',
-                  '#DF4A26', '#AE85F6', '#F7A82E',
-                  '#406CF3', '#E9F229', '#29ACF2']
-        for i in range(1000):
-            pen.setWidth(np.random.randint(1, 15))
-            pen.setColor(QColor(np.random.choice(colors)))
-            qp.setPen(pen)
-            rand_x = 100 * np.random.randn()
-            rand_y = 100 * np.random.randn()
-            qp.drawPoint(self.width() / 2 + rand_x, self.height() / 2 + rand_y)
+        self.setupUi(self)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+    #QApplication : 프로그램을 실행시켜주는 클래스
     app = QApplication(sys.argv)
-    ex = MyApp()
-    sys.exit(app.exec_())
+
+    #WindowClass의 인스턴스 생성
+    myWindow = WindowClass()
+
+    #프로그램 화면을 보여주는 코드
+    myWindow.show()
+
+    #프로그램을 이벤트루프로 진입시키는(프로그램을 작동시키는) 코드
+    app.exec_()
